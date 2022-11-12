@@ -17,6 +17,8 @@
 
 #include "config_common.h"
 
+#define MIDI_ADVANCED
+
 /* key matrix size */
 #define MATRIX_ROWS 4
 #define MATRIX_COLS 13
