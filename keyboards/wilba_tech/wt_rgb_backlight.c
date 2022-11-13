@@ -52,6 +52,8 @@
 #include "wt_rgb_backlight.h"
 #include "wt_rgb_backlight_api.h"
 #include "wt_rgb_backlight_keycodes.h"
+		
+#include "qmk_midi.h"
 
 #if !defined(RGB_BACKLIGHT_HS60) && !defined(RGB_BACKLIGHT_NK65) && !defined(RGB_BACKLIGHT_NK87) && !defined(RGB_BACKLIGHT_NEBULA68) && !defined(RGB_BACKLIGHT_NEBULA12) && !defined (RGB_BACKLIGHT_KW_MEGA)
 #include <avr/interrupt.h>
@@ -111,6 +113,14 @@ LED_TYPE g_ws2812_leds[WS2812_LED_TOTAL];
 #endif
 
 #define BACKLIGHT_EFFECT_MAX 10
+	
+bool midi_flash = false;
+uint8_t midi_color[BACKLIGHT_LED_COUNT];
+
+void set_midi_color(uint8_t index, uint8_t color)
+{
+	midi_color[index % BACKLIGHT_LED_COUNT] = color;
+}
 
 backlight_config g_config = {
     .use_split_backspace = RGB_BACKLIGHT_USE_SPLIT_BACKSPACE,
@@ -2055,7 +2065,19 @@ void backlight_effect_single_LED_test(void)
 // All LEDs off
 void backlight_effect_all_off(void)
 {
-    backlight_set_color_all( 0, 0, 0 );
+	if (midi_flash == true) 
+	{
+		for (int i = 0; i < BACKLIGHT_LED_COUNT; i++)
+		{
+			uint8_t c = midi_color[i];
+			backlight_set_color(i, c, c, c);
+		}
+	} 
+	else 
+	{
+		backlight_set_color_all( 0, 0, 0 );
+	}
+    
 }
 
 // Solid color
@@ -2484,6 +2506,7 @@ static void gpt_backlight_timer_task(GPTDriver *gptp)
             g_key_hit[led]++;
         }
     }
+	
 
     // Factory default magic value
     if ( g_config.effect == 255 )

@@ -20,7 +20,38 @@ MidiDevice midi_device;
 #define SYS_COMMON_2 0x20
 #define SYS_COMMON_3 0x30
 
+
+#include "print.h"
+#include "wt_rgb_backlight_api.h"
+
+static void note_on_callback(MidiDevice* device, uint8_t byte0, uint8_t byte1, uint8_t byte2)
+{
+	// print("note_on_callback\n");
+
+	set_midi_color(byte1, byte2);
+
+	midi_flash = true;
+}
+static void note_off_callback(MidiDevice* device, uint8_t byte0, uint8_t byte1, uint8_t byte2)
+{	
+	// print("note_off_callback\n");
+	set_midi_color(byte1, 0);
+
+}
+
+static void registerNoteCallbacks(void)
+{
+	// print("keyboard_post_init_user\n");
+	midi_register_noteon_callback(&midi_device, note_on_callback);
+	midi_register_noteoff_callback(&midi_device, note_off_callback);
+}
+
+
+
+
+
 static void usb_send_func(MidiDevice* device, uint16_t cnt, uint8_t byte0, uint8_t byte1, uint8_t byte2) {
+
     MIDI_EventPacket_t event;
     event.Data1 = byte0;
     event.Data2 = byte1;
@@ -75,6 +106,7 @@ static void usb_send_func(MidiDevice* device, uint16_t cnt, uint8_t byte0, uint8
 static void usb_get_midi(MidiDevice* device) {
     MIDI_EventPacket_t event;
     while (recv_midi_packet(&event)) {
+
         midi_packet_length_t length = midi_packet_length(event.Data1);
         uint8_t              input[3];
         input[0] = event.Data1;
@@ -94,7 +126,10 @@ static void usb_get_midi(MidiDevice* device) {
         }
 
         // pass the data to the device input function
-        if (length != UNDEFINED) midi_device_input(device, length, input);
+        if (length != UNDEFINED)
+			{
+				midi_device_input(device, length, input);	
+			} 
     }
 }
 
@@ -132,4 +167,5 @@ void setup_midi(void) {
     midi_device_set_pre_input_process_func(&midi_device, usb_get_midi);
     midi_register_fallthrough_callback(&midi_device, fallthrough_callback);
     midi_register_cc_callback(&midi_device, cc_callback);
+	registerNoteCallbacks();
 }

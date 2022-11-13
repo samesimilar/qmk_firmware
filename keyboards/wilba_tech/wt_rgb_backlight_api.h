@@ -15,6 +15,11 @@
  */
 #pragma once
 
+#include "qmk_midi.h"
+
+extern bool midi_flash;
+void set_midi_color(uint8_t index, uint8_t color);
+
 enum wt_rgb_backlight_config_value
 {
 	id_use_split_backspace = 0x01,

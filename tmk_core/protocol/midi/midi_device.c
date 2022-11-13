@@ -19,6 +19,8 @@
 #include "midi_device.h"
 #include "midi.h"
 
+#include "print.h"
+
 #ifndef NULL
 #    define NULL 0
 #endif
@@ -73,6 +75,7 @@ void midi_device_set_pre_input_process_func(MidiDevice* device, midi_no_byte_fun
 }
 
 void midi_device_process(MidiDevice* device) {
+
     // call the pre_input_process_callback if there is one
     if (device->pre_input_process_callback) device->pre_input_process_callback(device);
 
