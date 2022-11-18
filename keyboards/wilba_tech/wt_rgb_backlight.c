@@ -117,10 +117,6 @@ LED_TYPE g_ws2812_leds[WS2812_LED_TOTAL];
 bool midi_flash = false;
 uint8_t midi_color[BACKLIGHT_LED_COUNT];
 
-void set_midi_color(uint8_t index, uint8_t color)
-{
-	midi_color[index % BACKLIGHT_LED_COUNT] = color;
-}
 
 backlight_config g_config = {
     .use_split_backspace = RGB_BACKLIGHT_USE_SPLIT_BACKSPACE,
@@ -1767,7 +1763,16 @@ const uint8_t g_map_row_column_to_led[MATRIX_ROWS][MATRIX_COLS] PROGMEM = {
     { 36+15, 36+14, 36+13, 36+12, 36+11, 36+10,  36+9,  54+1,  54+2,  54+3,  54+4,  54+5,  54+6 },
     {  36+7,  36+6,  36+5,  36+4,  36+3,  36+2,  36+1,   255, 54+10, 54+11, 54+12, 54+13, 54+14 },
 };
+
+const uint8_t map_index_to_led[]  = {
+     0+15,  0+14,  0+13,  0+12,  0+11,  0+10,   0+9,  18+1,  18+2,  18+3,  18+4,  18+5,  18+6 ,
+     0+16,   0+6,   0+5,   0+4,   0+3,   0+2,   0+1,  18+9, 18+10, 18+11, 18+12, 18+13, 18+14 ,
+     36+15, 36+14, 36+13, 36+12, 36+11, 36+10,  36+9,  54+1,  54+2,  54+3,  54+4,  54+5,  54+6 ,
+     36+7,  36+6,  36+5,  36+4,  36+3,  36+2,  36+1,   255, 54+10, 54+11, 54+12, 54+13, 54+14 ,
+};
 #endif
+
+
 
 void map_row_column_to_led( uint8_t row, uint8_t column, uint8_t *led )
 {
@@ -1777,6 +1782,22 @@ void map_row_column_to_led( uint8_t row, uint8_t column, uint8_t *led )
         *led = pgm_read_byte(&g_map_row_column_to_led[row][column]);
     }
 }
+
+void set_midi_color(uint8_t index, uint8_t color)
+{
+	// uint8_t led_index = index % BACKLIGHT_LED_COUNT;
+	// uint8_t modded = index % (MATRIX_ROWS * MATRIX_COLS);
+	// uint8_t row = modded % MATRIX_ROWS;
+	// uint8_t column = modded / MATRIX_ROWS;
+	// uint8_t led_index = g_map_row_column_to_led[row][column];
+
+	uint8_t modded = index % 52;
+	uint8_t led_index = map_index_to_led[modded];
+	
+	midi_color[led_index] = color;
+	
+}
+
 
 void backlight_update_pwm_buffers(void)
 {
@@ -2062,22 +2083,103 @@ void backlight_effect_single_LED_test(void)
 }
 #endif // defined(RGB_DEBUGGING_ONLY)
 
+void backlight_effect_midi(void)
+{
+	for (int i = 0; i < BACKLIGHT_LED_COUNT; i++)
+	{
+		uint8_t c = midi_color[i];
+		uint8_t modc = c % 16;
+		switch (modc)
+		{
+			case 0:
+			{
+				backlight_set_color(i, RGB_OFF);
+				break;
+			}
+			case 1:
+			{
+				backlight_set_color(i, RGB_WHITE);
+				break;
+			}
+			case 2:
+			{
+				backlight_set_color(i, RGB_YELLOW);
+				break;
+			}
+			case 3:
+			{
+				backlight_set_color(i, RGB_TURQUOISE);
+				break;
+			}
+			case 4:
+			{
+				backlight_set_color(i, RGB_TEAL);
+				break;
+			}
+			case 5:
+			{
+				backlight_set_color(i, RGB_SPRINGGREEN);
+				break;
+			}
+			case 6:
+			{
+				backlight_set_color(i, RGB_RED);
+				break;
+			}
+			case 7:
+			{
+				backlight_set_color(i, RGB_PURPLE);
+				break;
+			}
+			case 8:
+			{
+				backlight_set_color(i, RGB_PINK);
+				break;
+			}
+			case 9:
+			{
+				backlight_set_color(i, RGB_ORANGE);
+				break;
+			}
+			case 10:
+			{
+				backlight_set_color(i, RGB_MAGENTA);
+				break;
+			}
+			case 11:
+			{
+				backlight_set_color(i, RGB_GREEN);
+				break;
+			}
+			case 12:
+			{
+				backlight_set_color(i, RGB_CYAN);
+				break;
+			}
+			case 13:
+			{
+				backlight_set_color(i, RGB_BLUE);
+				break;
+			}
+			case 14:
+			{
+				backlight_set_color(i, RGB_CORAL);
+				break;
+			}
+			case 15:
+			{
+				backlight_set_color(i, RGB_GOLD);
+				break;
+			}
+		}
+		
+	}
+}
+
 // All LEDs off
 void backlight_effect_all_off(void)
 {
-	if (midi_flash == true) 
-	{
-		for (int i = 0; i < BACKLIGHT_LED_COUNT; i++)
-		{
-			uint8_t c = midi_color[i];
-			backlight_set_color(i, c, c, c);
-		}
-	} 
-	else 
-	{
-		backlight_set_color_all( 0, 0, 0 );
-	}
-    
+	backlight_set_color_all( 0, 0, 0 );
 }
 
 // Solid color
@@ -2514,6 +2616,12 @@ static void gpt_backlight_timer_task(GPTDriver *gptp)
         backlight_effect_rgb_test();
         return;
     }
+	
+	if (midi_flash == true) 
+	{
+		backlight_effect_midi();
+		return;
+	}
 
     // Ideally we would also stop sending zeros to the LED driver PWM buffers
     // while suspended and just do a software shutdown. This is a cheap hack for now.
